@@ -7,6 +7,7 @@
 #include <ctime>
 #include <algorithm>
 #include<windows.h>
+#include<limits>
 
 using namespace std;
 
@@ -37,12 +38,31 @@ public:
         getline(cin, title);
         cout << "Enter task description: ";
         getline(cin, description);
-        cout << "Enter priority (1-10): ";
-        cin >> priority;
+        while (true) {
+            cout << "Enter priority (1-10): ";
+            cin >> priority;
+            if (cin.fail() || priority < 1 || priority > 10) {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << "Invalid input. Please enter a number between 1 and 10.\n";
+            } else {
+                break;
+            }
+        }
 
         int y, m, d, h, min;
-        cout << "Enter deadline (YYYY MM DD HH MM): ";
-        cin >> y >> m >> d >> h >> min;
+        while (true) {
+            cout << "Enter deadline (YYYY MM DD HH MM): ";
+            cin >> y >> m >> d >> h >> min;
+            if (cin.fail()) {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << "Invalid input. Please enter valid date and time values.\n";
+            } else {
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                break;
+            }
+        }
 
         tm t = {};
         t.tm_year = y - 1900;
@@ -104,6 +124,24 @@ public:
 vector<Task> tasks;
 stack<vector<Task> > undoStack;
 map<int, vector<int> > graph;
+void safeInputInt(const string& prompt, int& var, int minVal = INT_MIN, int maxVal = INT_MAX) {
+    while (true) {
+        cout << prompt;
+        cin >> var;
+        if (cin.fail() || var < minVal || var > maxVal) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Invalid input. Please enter a number";
+            if (minVal != INT_MIN && maxVal != INT_MAX) {
+                cout << " between " << minVal << " and " << maxVal;
+            }
+            cout << ".\n";
+        } else {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            break;
+        }
+    }
+}
 
 void saveTasks() {
     ofstream file("tasks.txt");
@@ -218,14 +256,15 @@ void searchTask() {
     for (int i = 0; i < tasks.size(); i++) {
         if (tasks[i].title.find(keyword) != string::npos || tasks[i].description.find(keyword) != string::npos) {
             tasks[i].display();
-        }
+        }else{
+        	cout<<"Enter valid task to serach."<<endl;
+		}
     }
 }
 
 void markCompleted() {
     int id;
-    cout << "Enter Task ID to mark as completed: ";
-    cin >> id;
+     safeInputInt("Enter Task ID to mark as completed: ", id);
 
     for (int i = 0; i < tasks.size(); i++) {
         if (tasks[i].id == id) {
@@ -251,7 +290,7 @@ void markCompleted() {
             }
 
             if (!allDepsDone) return;
-
+            undoStack.push(tasks);
             tasks[i].completed = true;
             tasks[i].rewardPoints += 10;
             cout << " +10 reward points!\n";
@@ -309,14 +348,14 @@ void checkReminders() {
 
 void addSubtask() {
     int parentId;
-    cout << "Enter parent task ID: ";
-    cin >> parentId;
+    safeInputInt("Enter parent task ID: ", parentId);
 
     for (int i = 0; i < tasks.size(); i++) {
         if (tasks[i].id == parentId) {
             Task sub;
             int newId = tasks.empty() ? 1 : tasks.back().id + 1;
-            sub.input(newId);
+            undoStack.push(tasks);
+			sub.input(newId);
             tasks.push_back(sub);
 
             tasks[i].subtasks.push_back(newId);
@@ -333,11 +372,13 @@ void addSubtask() {
 
 void addDependency() {
     string taskTitle, depTitle;
+    // Before getline(cin, taskTitle); check for leftovers
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     cout << "Enter Task Title: ";
-    cin.ignore();
     getline(cin, taskTitle);
     cout << "Enter Dependency Task Title: ";
     getline(cin, depTitle);
+
 
     int taskId = -1, depId = -1;
 
@@ -357,6 +398,7 @@ void addDependency() {
 
     for (int i = 0; i < tasks.size(); i++) {
         if (tasks[i].id == taskId) {
+        	undoStack.push(tasks);
             tasks[i].dependencies.push_back(depId);
             graph[depId].push_back(taskId);
             cout << "Dependency added successfully.\n";
@@ -380,8 +422,7 @@ void undoLastAction() {
 
 void editTask() {
     int id;
-    cout << "Enter Task ID to edit: ";
-    cin >> id;
+    safeInputInt("Enter Task ID to edit: ", id);
 
     for (int i = 0; i < tasks.size(); i++) {
         if (tasks[i].id == id) {
@@ -398,7 +439,18 @@ void editTask() {
             getline(cin, tasks[i].description);
 
             cout << "Enter new priority (current: " << tasks[i].priority << "): ";
+            while (true) {
+            cout << "Enter new priority (current: " << tasks[i].priority << "): ";
             cin >> tasks[i].priority;
+            if (cin.fail() || tasks[i].priority < 1 || tasks[i].priority > 10) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Invalid input. Please enter a number between 1 and 10.\n";
+             }else {
+               cin.ignore(numeric_limits<streamsize>::max(), '\n');
+               break;
+              }
+            }   
 
             int y, m, d, h, min;
             cout << "Enter new deadline (YYYY MM DD HH MM): ";
@@ -462,7 +514,12 @@ int main() {
         cout << "8. Undo Last Action\n9. Edit Task\n10. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
-
+        if (cin.fail()) {
+            cin.clear(); // clear error flag
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // discard invalid input
+            cout << "Invalid input. Please enter a number between 1 and 10.\n";
+            continue;
+        }
         switch (choice) {
             case 1: addTask(); break;
             case 2: displayTasks(); break;
