@@ -4,7 +4,7 @@
 #include <stack>//for undo task
 #include <map>//dependencies
 #include <fstream>//file handling
-#include<sstream>
+#include <sstream>
 #include <ctime>
 #include <algorithm>
 #include<windows.h>
@@ -23,7 +23,7 @@ public:
     vector<int> subtasks;
     vector<int> dependencies;
     int rewardPoints;
-    enum RepeatType { NONE = 0, DAILY = 1, WEEKLY = 2 };
+    enum RepeatType { NONE = 1, DAILY = 2, WEEKLY = 3 };
     RepeatType repeat;
 
     Task() {
@@ -95,7 +95,7 @@ public:
         t.tm_min = min;
         deadline = mktime(&t);
         cout << "Set recurrence type:\n";
-        cout << "0. None\n1. Daily\n2. Weekly\n";
+        cout << "1. None\n2. Daily\n3. Weekly\n";
         int repChoice;
         safeinputint("Enter your choice: ", repChoice, 0, 2);
         repeat = static_cast<RepeatType>(repChoice);
@@ -108,7 +108,7 @@ public:
     if (completed)
         SetConsoleTextAttribute(h, 10);  // Green
     else
-        SetConsoleTextAttribute(h, 14);  // Yellow
+        SetConsoleTextAttribute(h, 12);  // Red
         cout << "\nTask ID: " << id << "\nTitle: " << title
              << "\nDescription: " << description
              << "\nCategory: " << category
@@ -292,6 +292,7 @@ void searchTask() {
     for (int i = 0; i < tasks.size(); i++) {
         if (tasks[i].title.find(keyword) != string::npos || tasks[i].description.find(keyword) != string::npos) {
             tasks[i].display();
+            break;
         }else{
         	cout<<"Enter valid task to serach."<<endl;
 		}
@@ -576,13 +577,23 @@ void sortTasks() {
         cout << "No tasks available to sort.\n";
         return;
     }
+
     int choice;
     cout << "\n--- Sort Options ---\n";
     cout << "1. By Nearest Deadline\n";
     cout << "2. By Highest Priority\n";
-    cout << "3. By Most Reward Points\n";
+    cout << "3. By Most Reward Points (includes completed tasks)\n";
     safeInputInt("Enter your choice: ", choice, 1, 3);
-    vector<Task> sortedTasks = tasks;
+    vector<Task> sortedTasks;
+    for (int i = 0; i < tasks.size(); i++) {
+        if (choice == 3 || !tasks[i].completed) {
+            sortedTasks.push_back(tasks[i]);
+        }
+    }
+    if (sortedTasks.empty()) {
+        cout << "No matching tasks to sort.\n";
+        return;
+    }
     for (int i = 0; i < sortedTasks.size() - 1; i++) {
         for (int j = i + 1; j < sortedTasks.size(); j++) {
             bool shouldSwap = false;
@@ -739,6 +750,12 @@ int main() {
     while (!loggedIn) {
         cout << "\n1. Login\n2. Signup\n3. Exit\nEnter your choice: ";
         cin >> authChoice;
+        if (cin.fail()) {
+            cin.clear(); // clear error flag
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // discard invalid input
+            cout << "Invalid input. Please enter a number between 1 and 3.\n";
+            continue;
+        }
         switch (authChoice) {
             case 1: loggedIn = login(); break;
             case 2: loggedIn = signup(); break;
