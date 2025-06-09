@@ -111,7 +111,6 @@ public:
         SetConsoleTextAttribute(h, 12);  // Red
         cout << "\nTask ID: " << id << "\nTitle: " << title
              << "\nDescription: " << description
-             << "\nCategory: " << category
              << "\nDeadline: " << ctime(&deadline)
              << "Priority: " << priority
              << "\nReward Points: " << rewardPoints
