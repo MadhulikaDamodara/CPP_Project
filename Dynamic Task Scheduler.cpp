@@ -23,7 +23,7 @@ public:
     vector<int> subtasks;
     vector<int> dependencies;
     int rewardPoints;
-    enum RepeatType { NONE = 1, DAILY = 2, WEEKLY = 3 };
+    enum RepeatType { NONE = 0, DAILY = 1, WEEKLY = 2 };
     RepeatType repeat;
 
     Task() {
@@ -95,7 +95,7 @@ public:
         t.tm_min = min;
         deadline = mktime(&t);
         cout << "Set recurrence type:\n";
-        cout << "1. None\n2. Daily\n3. Weekly\n";
+        cout << "0. None\n1. Daily\n2. Weekly\n";
         int repChoice;
         safeinputint("Enter your choice: ", repChoice, 0, 2);
         repeat = static_cast<RepeatType>(repChoice);
